@@ -11252,3 +11252,4 @@ GoParser.TypeAssertionContext = TypeAssertionContext;
 GoParser.ArgumentsContext = ArgumentsContext; 
 GoParser.MethodExprContext = MethodExprContext; 
 GoParser.EosContext = EosContext; 
+
