@@ -2,7 +2,7 @@ node_modules
 *.js
 !docs/jsdoc/templates/**/*.js
 !docs/lib/**/*.js
-!src/parser/golang/runningParser.js
+!src/parser/golang/*
 *.map
 dist/
 .idea/
