@@ -40,6 +40,7 @@
     "acorn-class-fields": "^1.0.0",
     "acorn-loose": "^8.0.0",
     "acorn-walk": "^8.0.0",
+    "antlr4": "^4.13.1-patch-1",
     "astring": "^1.4.3",
     "gpu.js": "^2.16.0",
     "js-base64": "^3.7.5",
