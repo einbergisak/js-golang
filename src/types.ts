@@ -81,6 +81,7 @@ export const enum Chapter {
   SCHEME_4 = -12,
   FULL_SCHEME = -13,
   FULL_C = -14,
+  GOLANG = -15;
   LIBRARY_PARSER = 100
 }
 

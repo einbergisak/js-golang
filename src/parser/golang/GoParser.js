@@ -1,9 +1,7 @@
-// Generated from GoParser.g4 by ANTLR 4.13.1
+// Generated from /Users/nathanchou/Desktop/js-golang/src/parser/golang/GoParser.g4 by ANTLR 4.13.1
 // jshint ignore: start
 import antlr4 from 'antlr4';
 import GoParserListener from './GoParserListener.js';
-import GoParserVisitor from './GoParserVisitor.js';
-
 import GoParserBase from './GoParserBase.js';
 
 const serializedATN = [4, 1, 89, 1013, 2, 0, 7, 0, 2, 1, 7, 1, 2, 2, 7, 2, 2, 3, 7, 3, 2, 4, 7,
@@ -5237,7 +5235,6 @@ class SourceFileContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5284,7 +5281,6 @@ class PackageClauseContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5358,7 +5354,6 @@ class ImportDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5410,7 +5405,6 @@ class ImportSpecContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5452,7 +5446,6 @@ class ImportPathContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5503,7 +5496,6 @@ class DeclarationContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5577,7 +5569,6 @@ class ConstDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5631,7 +5622,6 @@ class ConstSpecContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5695,7 +5685,6 @@ class IdentifierListContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5756,7 +5745,6 @@ class ExpressionListContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5830,7 +5818,6 @@ class TypeDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5876,7 +5863,6 @@ class TypeSpecContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -5928,7 +5914,6 @@ class AliasDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -5978,7 +5963,6 @@ class TypeDefContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6049,7 +6033,6 @@ class TypeParametersContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6095,7 +6078,6 @@ class TypeParameterDeclContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6158,7 +6140,6 @@ class TypeElementContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6204,7 +6185,6 @@ class TypeTermContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6264,7 +6244,6 @@ class FunctionDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6323,7 +6302,6 @@ class MethodDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6365,7 +6343,6 @@ class ReceiverContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6439,7 +6416,6 @@ class VarDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6494,7 +6470,6 @@ class VarSpecContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6544,7 +6519,6 @@ class BlockContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6629,7 +6603,6 @@ class StatementListContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6729,7 +6702,6 @@ class StatementContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6788,7 +6760,6 @@ class SimpleStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6830,7 +6801,6 @@ class ExpressionStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6886,7 +6856,6 @@ class SendStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -6936,7 +6905,6 @@ class IncDecStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -6990,7 +6958,6 @@ class AssignmentContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7078,7 +7045,6 @@ class Assign_opContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7128,7 +7094,6 @@ class ShortVarDeclContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7180,7 +7145,6 @@ class LabeledStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7226,7 +7190,6 @@ class ReturnStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7274,7 +7237,6 @@ class BreakStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7320,7 +7282,6 @@ class ContinueStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7368,7 +7329,6 @@ class GotoStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7410,7 +7370,6 @@ class FallthroughStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7457,7 +7416,6 @@ class DeferStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7532,7 +7490,6 @@ class IfStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7578,7 +7535,6 @@ class SwitchStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7653,7 +7609,6 @@ class ExprSwitchStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7704,7 +7659,6 @@ class ExprCaseClauseContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7754,7 +7708,6 @@ class ExprSwitchCaseContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -7829,7 +7782,6 @@ class TypeSwitchStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7896,7 +7848,6 @@ class TypeSwitchGuardContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7947,7 +7898,6 @@ class TypeCaseClauseContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -7997,7 +7947,6 @@ class TypeSwitchCaseContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8072,7 +8021,6 @@ class TypeListContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8134,7 +8082,6 @@ class SelectStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8184,7 +8131,6 @@ class CommClauseContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8239,7 +8185,6 @@ class CommCaseContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8300,7 +8245,6 @@ class RecvStmtContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8358,7 +8302,6 @@ class ForStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8426,7 +8369,6 @@ class ForClauseContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8489,7 +8431,6 @@ class RangeClauseContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8535,7 +8476,6 @@ class GoStmtContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8599,7 +8539,6 @@ class Type_Context extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8654,7 +8593,6 @@ class TypeArgsContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8700,7 +8638,6 @@ class TypeNameContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8772,7 +8709,6 @@ class TypeLitContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8827,7 +8763,6 @@ class ArrayTypeContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8870,7 +8805,6 @@ class ArrayLengthContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -8912,7 +8846,6 @@ class ElementTypeContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -8959,7 +8892,6 @@ class PointerTypeContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9044,7 +8976,6 @@ class InterfaceTypeContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9094,7 +9025,6 @@ class SliceTypeContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9154,7 +9084,6 @@ class MapTypeContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9204,7 +9133,6 @@ class ChannelTypeContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9256,7 +9184,6 @@ class MethodSpecContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9302,7 +9229,6 @@ class FunctionTypeContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9350,7 +9276,6 @@ class SignatureContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9396,7 +9321,6 @@ class ResultContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9467,7 +9391,6 @@ class ParametersContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9517,7 +9440,6 @@ class ParameterDeclContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9660,7 +9582,6 @@ class ExpressionContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9739,7 +9660,6 @@ class PrimaryExprContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9797,7 +9717,6 @@ class ConversionContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9861,7 +9780,6 @@ class OperandContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -9911,7 +9829,6 @@ class LiteralContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -9966,7 +9883,6 @@ class BasicLitContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10030,7 +9946,6 @@ class IntegerContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10072,7 +9987,6 @@ class OperandNameContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10128,7 +10042,6 @@ class QualifiedIdentContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10174,7 +10087,6 @@ class CompositeLitContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10254,7 +10166,6 @@ class LiteralTypeContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10308,7 +10219,6 @@ class LiteralValueContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10371,7 +10281,6 @@ class ElementListContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10422,7 +10331,6 @@ class KeyedElementContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10469,7 +10377,6 @@ class KeyContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10515,7 +10422,6 @@ class ElementContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10589,7 +10495,6 @@ class StructTypeContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10645,7 +10550,6 @@ class FieldDeclContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10691,7 +10595,6 @@ class String_Context extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10743,7 +10646,6 @@ class EmbeddedFieldContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10794,7 +10696,6 @@ class FunctionLitContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10844,7 +10745,6 @@ class IndexContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -10915,7 +10815,6 @@ class Slice_Context extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -10969,7 +10868,6 @@ class TypeAssertionContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -11041,7 +10939,6 @@ class ArgumentsContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -11092,7 +10989,6 @@ class MethodExprContext extends antlr4.ParserRuleContext {
 		}
 	}
 
-
 }
 
 
@@ -11142,7 +11038,6 @@ class EosContext extends antlr4.ParserRuleContext {
 			return visitor.visitChildren(this);
 		}
 	}
-
 
 }
 
@@ -11252,4 +11147,3 @@ GoParser.TypeAssertionContext = TypeAssertionContext;
 GoParser.ArgumentsContext = ArgumentsContext;
 GoParser.MethodExprContext = MethodExprContext;
 GoParser.EosContext = EosContext;
-
