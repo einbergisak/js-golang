@@ -1,6 +1,8 @@
 import { parse } from 'acorn'
 import { Program } from 'estree'
-
+import { GoLexer } from './GoLexer.js';
+import { GoParser } from './GoParser.js';
+import { CharStream, CommonTokenStream } from 'antlr4';
 import { Context } from '../..'
 import { FatalSyntaxError } from '../errors'
 import { AcornOptions, Parser } from '../types'
@@ -15,12 +17,7 @@ parse(
     throwOnError?: boolean
   ): Program | null {
     try {
-      return parse(programStr, {
-        sourceType: 'module',
-        ecmaVersion: 'latest',
-        locations: true,
-        ...options
-      }) as unknown as Program
+      return goParse(programStr) as unknown as Program
     } catch (error) {
       if (error instanceof SyntaxError) {
         error = new FatalSyntaxError(positionToSourceLocation((error as any).loc), error.toString())
@@ -41,15 +38,21 @@ parse(
     return 'FullGoParser'
   }
 }
-// import { GoLexer } from './GoLexer.js';
-// import { GoParser } from './GoParser.js';
-// import { CharStream, CommonTokenStream } from 'antlr4';
-//
-//
-// const input = "if (3 != 2) {val x := 3;} else {val y := 2;};"
-// const chars = new CharStream(input); // replace this with a FileStream as required
-// const lexer = new GoLexer(chars);
-// const tokens = new CommonTokenStream(lexer);
-// const parser = new GoParser(tokens);
-// const tree = parser.expression();
-// console.log(tree.toStringTree);
+
+function goParse(programStr, {
+                         sourceType: 'module',
+                         ecmaVersion: 'latest',
+                         locations: true,
+                         ...options
+                       }){
+
+
+const input = "if (3 != 2) {val x := 3;} else {val y := 2;};"
+const chars = new CharStream(input); // replace this with a FileStream as required
+const lexer = new GoLexer(chars);
+const tokens = new CommonTokenStream(lexer);
+const parser = new GoParser(tokens);
+const tree = parser.expression();
+return tree.toStringTree(parser.ruleNames);
+
+}

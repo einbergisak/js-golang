@@ -24,4 +24,6 @@ const tokens = new antlr4.CommonTokenStream(lexer);
 const parser = new GoParser(tokens);
 const tree = parser.block();
 //
-console.log(tree.toStringTree);
+console.log(tree.toStringTree(parser.ruleNames));
+
+
