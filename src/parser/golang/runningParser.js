@@ -13,7 +13,7 @@ let content = "public class SampleClass { void DoSomething(){} }";
 // const ECMAScriptLexer = require('./GoLexer.js');
 // const ECMAScriptParser = require('./lib/ECMAScriptParser.js');
 //
- const input = '{x: 1}';
+ const input = '1+2';
 //
 const chars = new antlr4.InputStream(input);
 const lexer = new GoLexer(chars);
@@ -22,7 +22,7 @@ lexer.strictMode = false; // do not use js strictMode
 //
 const tokens = new antlr4.CommonTokenStream(lexer);
 const parser = new GoParser(tokens);
-const tree = parser.block();
+const tree = parser.expression();
 //
 console.log(tree.toStringTree(parser.ruleNames));
 
