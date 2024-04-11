@@ -120,7 +120,7 @@ const binop_microcode = {
 
 
 const unop_microcode = {
-  '-unary': x => - x,
+  '-': x => - x,
   '!'     : x => is_boolean(x)
                  ? ! x
                  : error(x, '! expects boolean, found:')
@@ -197,7 +197,7 @@ primaryExpr:
         for (let i = 0; i < expressionList.getChildCount(); i++) {
           compile(expressionList.getChild(i))
         }
-        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount()-1}
+        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() == 0? 0 : expressionList.getChildCount() -1}
       }
       else{
         compile(node.getChild(0))
