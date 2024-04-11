@@ -4,10 +4,9 @@ import antlr4 from 'antlr4';
 //import GoParserListener from './GoParserListener.js';
  const input = '1+2';
  const input3 = `package main
- func main(x int) {
-     for x > 5{
-         var y,c = 5,true
-     }
+ func main() {
+    var z = 0
+        var y = 5 + 3 / 4
   }
    `
  const input2 = `
@@ -24,12 +23,110 @@ func main() {
 const chars = new antlr4.InputStream(input3);
 const lexer = new GoLexer(chars);
 //
-lexer.strictMode = false; // do not use js strictMode
+lexer.strictMode = false;
 //
 const tokens = new antlr4.CommonTokenStream(lexer);
 const parser = new GoParser(tokens);
 const tree = parser.sourceFile();
 
+const push = (array, ...items) => {
+  array.splice(array.length, 0, ...items)
+  return array
+}
+const lookup = (x, e) => {
+  if (is_null(e)) {
+    error('unbound name:', x)
+    sys.ex
+  }
+
+  console.log("E IS ::::::",e)
+  if (head(e).hasOwnProperty(x)) {
+      const v = head(e)[x]
+      if (is_unassigned(v))
+          error('unassigned name: ',  cmd.sym)
+      return v
+  }
+  return lookup(x, tail(e))
+}
+function error(message, ...args) {
+  const errorMessage = args.length > 0 ? `${message}: ${args.join(', ')}` : message;
+  throw new Error(errorMessage);
+}
+
+const is_null = (x) => x == null || x == undefined || head(x) == null
+const head = (x) => x[0]
+const tail = (x) => x.length > 1 ? x.slice(1) : x[1]  // TODO: x[1] instead?
+const extend = (xs, vs, e) => {
+  if (vs.length > xs.length) error('too many arguments')
+  if (vs.length < xs.length) error('too few arguments')
+  const new_frame = {}
+  for (let i = 0; i < xs.length; i++)
+      new_frame[xs[i]] = vs[i]
+  return [new_frame, e]
+}
+const peek = array =>
+    array.slice(-1)[0]
+const unassigned = { tag: 'unassigned' }
+
+const is_unassigned = v => {
+  return v !== null &&
+  typeof v === "object" &&
+  v.hasOwnProperty('tag') &&
+  v.tag === 'unassigned'
+}
+const assign_value = (x, v, e) => {
+  if (is_null(e))
+      error('unbound name:', x)
+  if (head(e).hasOwnProperty(x)) {
+      head(e)[x] = v
+  } else {
+      assign_value(x, v, tail(e))
+  }
+}
+
+const apply_binop = (op, v2, v1) => binop_microcode[op](v1, v2)
+
+function is_number(value) {
+  return typeof value === 'number';
+}
+function is_string(value) {
+  return typeof value === 'string'
+}
+
+function is_boolean(value) {
+  return typeof value === 'boolean'
+}
+
+
+const binop_microcode = {
+
+  '+': (x, y)   => (is_number(x) && is_number(y)) ||
+                   (is_string(x) && is_string(y))
+                   ? x + y
+                   : error( "+ expects two numbers" +
+                                  " or two strings, got", typeof(y)),
+
+  '*':   (x, y) => x * y,
+  '-':   (x, y) => x - y,
+  '/':   (x, y) => x / y,
+  '%':   (x, y) => x % y,
+  '<':   (x, y) => x < y,
+  '<=':  (x, y) => x <= y,
+  '>=':  (x, y) => x >= y,
+  '>':   (x, y) => x > y,
+  '==': (x, y) => x === y,
+  '!==': (x, y) => x !== y
+}
+
+
+const unop_microcode = {
+  '-unary': x => - x,
+  '!'     : x => is_boolean(x)
+                 ? ! x
+                 : error(x, '! expects boolean, found:')
+}
+
+const apply_unop = (op, v) => unop_microcode[op](v)
 
 let wc
 
@@ -47,12 +144,12 @@ function scan(node) {
 
   function traverse(node) {
       if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"   ) {
-          console.log("FOUND IDENTIFIER: "+node.getChild(0))
+          //console.log("FOUND IDENTIFIER: "+node.getChild(0))
           names.push(node.getChild(0).getText())
       } else if (node.children) {
           node.children.forEach(child => {if (getRuleName(child) != "block") { traverse(child)}});
       }
-      console.log("TRAVERSING, RULE NAME WAS "+getRuleName(node))
+     // console.log("TRAVERSING, RULE NAME WAS "+getRuleName(node))
 
   }
   traverse(node);
@@ -73,8 +170,9 @@ sourceFile:
         compile(node.getChild(i))
 
       }
-      instrs[wc++] = { tag: "LD", sym: "main"}
-      instrs[wc++] = {tag: 'CALL', arity: 0}
+      // TODO: RUN MAIN FUNCTIONS
+    //   instrs[wc++] = { tag: "LD", sym: "main"}
+    //  instrs[wc++] = {tag: 'CALL', arity: 0}
 
         },
 expression:
@@ -84,7 +182,7 @@ expression:
             compile(node.getChild(2))
             instrs[wc++] = {tag: 'BINOP', sym: node.getChild(1).getText()}
         } else if (node.getChildCount() ==2 ) {
-            compile(node.getChild(2))
+            compile(node.getChild(1))
             instrs[wc++] = {tag: 'UNOP', sym: node.getChild(0).getText()}
         }
         else{
@@ -108,7 +206,11 @@ primaryExpr:
     },
 basicLit:
     node => {
-      instrs[wc++] = { tag: "LDC", val: node.getChild(0).getText() }
+      //EVERYTHING NOT A STRING OR BOOLEAN IS A NUMBER
+      if (getRuleName(node.getChild(0)) == "string_"){
+        instrs[wc++] = { tag: "LDC", val: node.getChild(0).getText() }
+      }  
+    else {instrs[wc++] = { tag: "LDC", val: Number(node.getChild(0).getText())}}
     },
 operandName:
     node => {
@@ -174,20 +276,21 @@ identifierList:
 node => {
   null
 },
-varSpec: // TODO: Simplify to single variable assignment
+varSpec:
     node => {
-
-        let identifierList = node.getChild(0)
-        let symsList = []
-        for (let i = 0; i < identifierList.getChildCount(); i++) {
-          symsList.push(identifierList.getChild(i).getText())
-        }
-        let values = node.getChild(2)
-        for (let i = 0; i < values.getChildCount(); i++) {
-          compile(values.getChild(i))
-          instrs[wc++] = {tag: 'ASSIGN', sym: symsList[i]}
-        }
-      },
+      let identifierList = node.getChild(0)
+      let symsList = []
+      for (let i = 0; i < identifierList.getChildCount(); i++) {
+        if (identifierList.getChild(i).getText() == ",") {continue}
+        symsList.push(identifierList.getChild(i).getText())
+      }
+      let values = node.getChild(2)
+      for (let i = 0; i < values.getChildCount(); i++) {
+        if (values.getChild(i).getText() == ","){continue}
+        compile(values.getChild(i))
+        instrs[wc++] = {tag: 'ASSIGN', sym: symsList.shift()}
+      }
+    },
 
 
 functionDecl:
@@ -210,7 +313,7 @@ functionDecl:
       }
       instrs[wc++] = {tag: 'LDF', prms: parameters, addr: wc + 1};
       const goto_instruction = {tag: 'GOTO'}
-      instrs[wc++] = goto_instruction
+      //instrs[wc++] = goto_instruction
       const block = node.children.find(child => getRuleName(child) === "block")
       compile(block)
       instrs[wc++] = {tag: 'LDC', val: undefined}
@@ -236,7 +339,7 @@ eos:
 // starting at wc (write counter)
 const compile = node => {
   let ruleName = getRuleName(node)
-  console.log("RULE NAME IS: ", ruleName)
+  //console.log("RULE NAME IS: ", ruleName)
   if (IGNOREABLE.has(ruleName)){
     compile(node.getChild(0))
   } else{
@@ -273,6 +376,7 @@ UNOP:
 BINOP:
     instr => {
         PC++
+        console.log(instr.sym)
         push(OS, apply_binop(instr.sym, OS.pop(), OS.pop()))
     },
 POP:
@@ -359,6 +463,12 @@ RESET :
     }
 }
 
+
+compile_program(tree)
+const global_frame = {}
+const empty_environment = null
+const global_environment =[global_frame, empty_environment]
+
 console.log(run())// compile_program(tree)
 console.log(instrs)
 function run() {
@@ -367,14 +477,16 @@ function run() {
     E = global_environment
     RTS = []
 
-    while (1) {//display("next instruction: ")
+    while (instrs[PC].tag != "DONE") {//display("next instruction: ")
         //print_code([instrs[PC]])
         //display(PC, "PC: ")
         //print_OS("\noperands:            ");
         //print_RTS("\nRTS:            "); ");
         //print_RTS("\nRTS:            ");
         const instr = instrs[PC]
-        microcode[instr.tag](instr)    }
+        console.log("INSTRUMCTION IS :::: "+instr.tag)
+        microcode[instr.tag](instr)
+      }
     return peek(OS)
 }
 
