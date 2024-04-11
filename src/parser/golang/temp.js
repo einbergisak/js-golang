@@ -4,10 +4,19 @@ import antlr4 from 'antlr4';
 //import GoParserListener from './GoParserListener.js';
  const input = '1+2';
  const input3 = `package main
- func main() {
-    var z = 0
-        var y = 5 + 3 / 4
+
+ func myGoroutine() {
+    1;
+    2;
+    3;
   }
+ func main() {
+    0;
+    go myGoroutine()
+    4;
+    5;
+  }
+
    `
  const input2 = `
 package main
@@ -34,12 +43,13 @@ const push = (array, ...items) => {
   return array
 }
 const lookup = (x, e) => {
+
+
   if (is_null(e)) {
     error('unbound name:', x)
-    sys.ex
   }
 
-  console.log("E IS ::::::",e)
+
   if (head(e).hasOwnProperty(x)) {
       const v = head(e)[x]
       if (is_unassigned(v))
@@ -55,13 +65,17 @@ function error(message, ...args) {
 
 const is_null = (x) => x == null || x == undefined || head(x) == null
 const head = (x) => x[0]
-const tail = (x) => x.length > 1 ? x.slice(1) : x[1]  // TODO: x[1] instead?
+const tail = (x) => x[1]  // TODO: x[1] instead?
 const extend = (xs, vs, e) => {
+
+
   if (vs.length > xs.length) error('too many arguments')
   if (vs.length < xs.length) error('too few arguments')
   const new_frame = {}
   for (let i = 0; i < xs.length; i++)
       new_frame[xs[i]] = vs[i]
+
+
   return [new_frame, e]
 }
 const peek = array =>
@@ -143,9 +157,11 @@ function scan(node) {
   const names = [];
 
   function traverse(node) {
-      if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"   ) {
+      if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"  ) {
           //console.log("FOUND IDENTIFIER: "+node.getChild(0))
           names.push(node.getChild(0).getText())
+      } else if ( getRuleName(node) == "functionDecl" ) {
+          names.push(node.getChild(1).getText())
       } else if (node.children) {
           node.children.forEach(child => {if (getRuleName(child) != "block") { traverse(child)}});
       }
@@ -166,13 +182,14 @@ packageClause:
 },
 sourceFile:
     node => {
+      const locals = scan(node)
+      instrs[wc++] = {tag: 'ENTER_SCOPE', syms: locals} // global env for sourcefile
       for (let i = 0; i < node.getChildCount(); i++) {
         compile(node.getChild(i))
-
       }
       // TODO: RUN MAIN FUNCTIONS
-    //   instrs[wc++] = { tag: "LD", sym: "main"}
-    //  instrs[wc++] = {tag: 'CALL', arity: 0}
+      instrs[wc++] = { tag: "LD", sym: "main"}
+      instrs[wc++] = {tag: 'CALL', arity: 0}
 
         },
 expression:
@@ -197,7 +214,7 @@ primaryExpr:
         for (let i = 0; i < expressionList.getChildCount(); i++) {
           compile(expressionList.getChild(i))
         }
-        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() == 0? 0 : expressionList.getChildCount() -1}
+        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() -1}
       }
       else{
         compile(node.getChild(0))
@@ -209,7 +226,7 @@ basicLit:
       //EVERYTHING NOT A STRING OR BOOLEAN IS A NUMBER
       if (getRuleName(node.getChild(0)) == "string_"){
         instrs[wc++] = { tag: "LDC", val: node.getChild(0).getText() }
-      }  
+      }
     else {instrs[wc++] = { tag: "LDC", val: Number(node.getChild(0).getText())}}
     },
 operandName:
@@ -264,7 +281,7 @@ statementList:
     let first = true
     for (let i = 0; i < node.getChildCount(); i++) {
       first ? first = false
-              : (getRuleName(node.getChild(i)) != "eos" ? instrs[wc++] = {tag: 'POP'}: null)
+              : (getRuleName(node.getChild(i)) !== "eos" ? instrs[wc++] = {tag: 'POP'}: null)
       compile(node.getChild(i));
     }
 },
@@ -295,7 +312,7 @@ varSpec:
 
 functionDecl:
     node => {
-      const sym = node.getChild(1)
+      const sym = node.getChild(1).getText()
       const parameters = []
       const signature = node.children.find(child => getRuleName(child) === "signature")
       const paramsNode = signature.children.find(child => getRuleName(child) === "parameters")
@@ -313,24 +330,40 @@ functionDecl:
       }
       instrs[wc++] = {tag: 'LDF', prms: parameters, addr: wc + 1};
       const goto_instruction = {tag: 'GOTO'}
-      //instrs[wc++] = goto_instruction
-      const block = node.children.find(child => getRuleName(child) === "block")
+      instrs[wc++] = goto_instruction
+      const block = node.children.find(child => getRuleName(child) === "block") //TODO change to "block" idk
       compile(block)
       instrs[wc++] = {tag: 'LDC', val: undefined}
       instrs[wc++] = {tag: 'RESET'}
       goto_instruction.addr = wc;
+      instrs[wc++] = {tag: 'ASSIGN', sym: sym}
       },
 
 
 returnStmt:
       node => {
-        compile(node.getChild(0))
+        compile(node.getChild(1))
         instrs[wc++] = {tag: 'RESET'}
       },
 eos:
     node => {
      null
     },
+
+goStmt:
+  node =>{
+    instrs[wc++] = {tag: 'GOSTMT'}
+
+    let primaryExpr = node.getChild(1).getChild(0)
+    compile(primaryExpr.getChild(0))
+    let expressionList = primaryExpr.getChild(1).getChild(1)
+    for (let i = 0; i < expressionList.getChildCount(); i++) {
+        compile(expressionList.getChild(i))
+    }
+    instrs[wc++] = {tag: 'GOCALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() -1}
+    instrs[wc++] = {tag: 'LDC', val: undefined}
+
+},
 
 }
 
@@ -344,6 +377,8 @@ const compile = node => {
     compile(node.getChild(0))
   } else{
     let f = compile_comp[getRuleName(node)]
+    if (typeof f != "function")
+      console.log("NOT A FUNCTION: ",getRuleName(node))
     f(node)
     instrs[wc] = {tag: 'DONE'}
   }
@@ -357,145 +392,196 @@ const compile_program = program => {
   compile(program)
 }
 
-let OS
-let PC
-let E
-let RTS
-
 const microcode = {
 LDC:
-    instr => {
-        PC++
-        push(OS, instr.val);
+    (instr, routine) => {
+        routine.PC++
+        push(routine.OS, instr.val);
     },
 UNOP:
-    instr => {
-        PC++
-        push(OS, apply_unop(instr.sym, OS.pop()))
+    (instr, routine) => {
+        routine.PC++
+        push(routine.OS, apply_unop(instr.sym, routine.OS.pop()))
     },
 BINOP:
-    instr => {
-        PC++
-        console.log(instr.sym)
-        push(OS, apply_binop(instr.sym, OS.pop(), OS.pop()))
+(instr, routine) => {
+    routine.PC++
+        push(routine.OS, apply_binop(instr.sym, routine.OS.pop(), routine.OS.pop()))
     },
 POP:
-    instr => {
-        PC++
-        OS.pop()
+(instr, routine) => {
+    routine.PC++
+    routine.OS.pop()
     },
 JOF:
-    instr => {
-        PC = OS.pop() ? PC + 1 : instr.addr
+(instr, routine) => {
+        routine.PC = routine.OS.pop() ? routine.PC + 1 : instr.addr
     },
 GOTO:
-    instr => {
-        PC = instr.addr
+(instr, routine) => {
+        routine.PC = instr.addr
     },
 ENTER_SCOPE:
-    instr => {
-        PC++
-        push(RTS, {tag: 'BLOCK_FRAME', env: E})
+(instr, routine) => {
+        routine.PC++
+        push(routine.RTS, {tag: 'BLOCK_FRAME', env: routine.E})
         const locals = instr.syms
         const unassigneds = locals.map(_ => unassigned)
-        E = extend(locals, unassigneds, E)
+        routine.E = extend(locals, unassigneds, routine.E)
     },
 EXIT_SCOPE:
-    instr => {
-        PC++
-        E = RTS.pop().env
+(instr, routine) => {
+        routine.PC++
+        routine.E = routine.RTS.pop().env
     },
 LD:
-    instr => {
-        PC++
-        push(OS, lookup(instr.sym, E))
+(instr, routine) => {
+        routine.PC++
+        push(routine.OS, lookup(instr.sym, routine.E))
     },
 ASSIGN:
-    instr => {
-        PC++
-        assign_value(instr.sym, peek(OS), E)
+(instr, routine) => {
+        routine.PC++
+        assign_value(instr.sym, peek(routine.OS), routine.E)
     },
 LDF:
-    instr => {
-        PC++
-        push(OS, {tag: 'CLOSURE', prms: instr.prms,
-                   addr: instr.addr, env: E})
+(instr, routine) => {
+        routine.PC++
+        push(routine.OS, {tag: 'FUNCTION', prms: instr.prms,
+                   addr: instr.addr, env: routine.E})
     },
 CALL:
-    instr => {
+(instr, routine) => {
         const arity = instr.arity
         let args = []
         for (let i = arity - 1; i >= 0; i--)
-            args[i] = OS.pop()
-        const sf = OS.pop()
+            args[i] = routine.OS.pop()
+        const sf = routine.OS.pop()
         if (sf.tag === 'BUILTIN') {
-            PC++
-            return push(OS, apply_builtin(sf.sym, args))
+            routine.PC++
+            return push(routine.OS, apply_builtin(sf.sym, args))
         }
-        push(RTS, {tag: 'CALL_FRAME', addr: PC + 1, env: E})
-        E = extend(sf.prms, args, sf.env)
-        PC = sf.addr
+        push(routine.RTS, {tag: 'CALL_FRAME', addr: routine.PC + 1, env: routine.E})
+        routine.E = extend(sf.prms, args, sf.env)
+        routine.PC = sf.addr
     },
+GOSTMT:
+(instr, routine) => {
+    let newRoutine = new Routine(routine.OS.slice(), routine.PC + 1,routine.E,routine.RTS.slice(),instrs)
+    routinesToWaiters.set(newRoutine, [])
+    routines.push(newRoutine)
+    while(instrs[routine.PC].tag != "GOCALL"){
+        routine.PC++
+    }
+    routine.PC++
+},
+GOCALL:
+(instr, routine) => {
+    
+    const arity = instr.arity
+    let args = []
+    for (let i = arity - 1; i >= 0; i--)
+        args[i] = routine.OS.pop()
+    const sf = routine.OS.pop()
+    
+    if (sf.tag === 'BUILTIN') {
+        routine.PC++
+        return push(routine.OS, apply_builtin(sf.sym, args))
+    }
+    push(routine.RTS, {tag: 'CALL_FRAME', addr: instrs.length -1, env: routine.E})
+    routine.E = extend(sf.prms, args, sf.env)
+    routine.PC = sf.addr
+},
 TAIL_CALL:
-    instr => {
+(instr, routine) => {
         const arity = instr.arity
         let args = []
         for (let i = arity - 1; i >= 0; i--)
-            args[i] = OS.pop()
-        const sf = OS.pop()
+            args[i] = routine.OS.pop()
+        const sf = routine.OS.pop()
         if (sf.tag === 'BUILTIN') {
-            PC++
-            return push(OS, apply_builtin(sf.sym, args))
+            routine.PC++
+            return push(routine.OS, apply_builtin(sf.sym, args))
         }
         // dont push on RTS here
-        E = extend(sf.prms, args, sf.env)
-        PC = sf.addr
+        routine.E = extend(sf.prms, args, sf.env)
+        routine.PC = sf.addr
     },
 RESET :
-    instr => {
+(instr, routine) => {
         // keep popping...
-        const top_frame = RTS.pop()
+        const top_frame = routine.RTS.pop()
         if (top_frame.tag === 'CALL_FRAME') {
             // ...until top frame is a call frame
-            PC = top_frame.addr
-            E = top_frame.env
+            routine.PC = top_frame.addr
+            routine.E = top_frame.env
         }
     }
 }
 
 
 compile_program(tree)
+console.log(instrs)
 const global_frame = {}
 const empty_environment = null
-const global_environment =[global_frame, empty_environment]
-
-console.log(run())// compile_program(tree)
-console.log(instrs)
-function run() {
-    OS = []
-    PC = 0
-    E = global_environment
-    RTS = []
-
-    while (instrs[PC].tag != "DONE") {//display("next instruction: ")
-        //print_code([instrs[PC]])
-        //display(PC, "PC: ")
-        //print_OS("\noperands:            ");
-        //print_RTS("\nRTS:            "); ");
-        //print_RTS("\nRTS:            ");
-        const instr = instrs[PC]
-        console.log("INSTRUMCTION IS :::: "+instr.tag)
-        microcode[instr.tag](instr)
-      }
-    return peek(OS)
-}
+const global_environment = [global_frame, empty_environment]
+const INSTRUCTION_ALLOWANCE = 2
 
 class Routine{
-    constructor(OS, PC, E RTS, instrs)
+    constructor(OS, PC, E, RTS, instrs){
+        this.OS = OS
+        this.PC = PC
+        this.E = E
+        this.RTS = RTS
+        this.instrs = instrs
+        this.runAfter = Date.now();
+
+        console.log("NEW ROUTINE STARTED::: " + this.instrs[this.PC].tag)
+        //console.log(this.instrs[this.PC])
+        //this.runUntil = Date.now();
+
+    }
+    runRoutine(){
+        //this.runUntil = Date.now() + SWITCH_TIME
+        let instrCounter = 0
+        while((Date.now() > this.runAfter - 1 ) && instrCounter < INSTRUCTION_ALLOWANCE && this.instrs[this.PC].tag != "DONE" && !waiters.has(this)){
+            const instr = this.instrs[this.PC]
+            console.log(instr)
+            microcode[instr.tag](instr, this)
+            instrCounter++
+        }
+        if (this.instrs[this.PC].tag == "DONE"){
+            routinesToWaiters.get(this).forEach(waiters.delete)
+            routinesToWaiters.delete(this)
+            let delIndex = routines.indexOf(this);
+            if (delIndex > -1) { 
+            routines.splice(delIndex, 1);
+            console.log("END OF ROUTINE::: " + peek(this.OS)) 
+            }
+        }
+
+    }
+    
 }
 
+let routinesToWaiters = new Map()
+let routines = []
+let waiters = new Set()
+function run2() {
+    const main = new Routine([],0,global_environment,[],instrs)
+    routinesToWaiters.set(main, [])
+    routines.push(main)
+    let index = 0
+    while (routines.length > 0) {
+        let routine = routines[index]
+        if(!waiters.has(routine)){routine.runRoutine()}
+        index = (index+1)%routines.length
+        //console.log(routines)
+        console.log(index)
+      }
+}
 
-
+run2()
 
 
 

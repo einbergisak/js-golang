@@ -5,13 +5,16 @@ import antlr4 from 'antlr4';
  const input = '1+2';
  const input3 = `package main
 
- func asd(x int, y int) {
-  return x * 2 + y
+ func asd(y int, x int) {
+    // for x < y*2 {
+    //   x = x + 2
+    // }
+    return x
 }
  func main() {
     var z = 0
     var y = 5 + 2 / 4
-    return asd(y, 7)
+    return asd(y, 2)
   }
 
 
@@ -353,10 +356,12 @@ eos:
 
 goStmt:
   node =>{
-    const functionNameNode = node.children.find(child => getRuleName(child) === "expression")
-    const functionName = functionNameNode.children[0].children[0].children[0];
-    const functionToExecute = resolveFunction(functionName.children[0]);
-    //Execute functionToExecute concurrency
+
+    compile(node.getChild(1))
+    // const functionNameNode = node.children.find(child => getRuleName(child) === "expression")
+    // const functionName = functionNameNode.children[0].children[0].children[0];
+    // const functionToExecute = resolveFunction(functionName.children[0]);
+    // Execute functionToExecute concurrency
 },
 
 }
@@ -371,6 +376,8 @@ const compile = node => {
     compile(node.getChild(0))
   } else{
     let f = compile_comp[getRuleName(node)]
+    if (typeof f != "function")
+      console.log("NOT A FUNCTION: ",getRuleName(node))
     f(node)
     instrs[wc] = {tag: 'DONE'}
   }
