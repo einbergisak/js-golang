@@ -5,12 +5,16 @@ import antlr4 from 'antlr4';
  const input = '1+2';
  const input3 = `package main
 
+ func asd(x int, y int) {
+  return x * 2 + y
+}
  func main() {
     var z = 0
     var y = 5 + 2 / 4
-
-    return 2*y
+    return asd(y, 7)
   }
+
+
    `
  const input2 = `
 package main
@@ -37,9 +41,10 @@ const push = (array, ...items) => {
   return array
 }
 const lookup = (x, e) => {
+
+  console.log("LOOKING INTO: ",e)
   if (is_null(e)) {
     error('unbound name:', x)
-    sys.ex
   }
 
   console.log("E IS ::::::",e)
@@ -58,13 +63,19 @@ function error(message, ...args) {
 
 const is_null = (x) => x == null || x == undefined || head(x) == null
 const head = (x) => x[0]
-const tail = (x) => x.length > 1 ? x.slice(1) : x[1]  // TODO: x[1] instead?
+const tail = (x) => x[1]  // TODO: x[1] instead?
 const extend = (xs, vs, e) => {
+
+  console.log("EBEFORE:: ",E)
+  console.log("XS: ",xs)
+  console.log("VS: ",vs)
   if (vs.length > xs.length) error('too many arguments')
   if (vs.length < xs.length) error('too few arguments')
   const new_frame = {}
   for (let i = 0; i < xs.length; i++)
       new_frame[xs[i]] = vs[i]
+
+   console.log("EAFTER:: ",[new_frame, e])
   return [new_frame, e]
 }
 const peek = array =>
@@ -204,7 +215,7 @@ primaryExpr:
         for (let i = 0; i < expressionList.getChildCount(); i++) {
           compile(expressionList.getChild(i))
         }
-        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() == 0? 0 : expressionList.getChildCount() -1}
+        instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() -1}
       }
       else{
         compile(node.getChild(0))
@@ -271,7 +282,7 @@ statementList:
     let first = true
     for (let i = 0; i < node.getChildCount(); i++) {
       first ? first = false
-              : (getRuleName(node.getChild(i)) != "eos" ? instrs[wc++] = {tag: 'POP'}: null)
+              : (getRuleName(node.getChild(i)) !== "eos" ? instrs[wc++] = {tag: 'POP'}: null)
       compile(node.getChild(i));
     }
 },
@@ -321,7 +332,7 @@ functionDecl:
       instrs[wc++] = {tag: 'LDF', prms: parameters, addr: wc + 1};
       const goto_instruction = {tag: 'GOTO'}
       instrs[wc++] = goto_instruction
-      const block = node.children.find(child => getRuleName(child) === "block")
+      const block = node.children.find(child => getRuleName(child) === "block") //TODO change to "block" idk
       compile(block)
       instrs[wc++] = {tag: 'LDC', val: undefined}
       instrs[wc++] = {tag: 'RESET'}
@@ -425,7 +436,6 @@ LD:
     instr => {
         PC++
         push(OS, lookup(instr.sym, E))
-        console.log("OS IS NOW:::: ",OS)
     },
 ASSIGN:
     instr => {
@@ -445,6 +455,7 @@ CALL:
         for (let i = arity - 1; i >= 0; i--)
             args[i] = OS.pop()
         const sf = OS.pop()
+        console.log("GOT FUNC IN CALL ::: ", sf)
         if (sf.tag === 'BUILTIN') {
             PC++
             return push(OS, apply_builtin(sf.sym, args))
@@ -502,7 +513,10 @@ function run() {
         //print_RTS("\nRTS:            ");
         const instr = instrs[PC]
         // console.log("INSTRUCTION IS :::: "+instr.tag)
+
+        console.log("Instruction is:::: ", instr.tag)
         microcode[instr.tag](instr)
+        console.log("E IS NOW:: ",E)
       }
     return peek(OS)
 }
