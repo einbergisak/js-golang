@@ -4,12 +4,9 @@ import antlr4 from 'antlr4';
 //import GoParserListener from './GoParserListener.js';
  const input = '1+2';
  const input3 = `package main
-
  func main() {
     var z = 0
-    var y = 5 + 2 / 4
-
-    return 2*y
+        var y = 5 + 3 / 4
   }
    `
  const input2 = `
@@ -85,7 +82,6 @@ const assign_value = (x, v, e) => {
   } else {
       assign_value(x, v, tail(e))
   }
-  console.log("E IS NOW::: ",e)
 }
 
 const apply_binop = (op, v2, v1) => binop_microcode[op](v1, v2)
@@ -147,11 +143,9 @@ function scan(node) {
   const names = [];
 
   function traverse(node) {
-      if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"  ) {
+      if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"   ) {
           //console.log("FOUND IDENTIFIER: "+node.getChild(0))
           names.push(node.getChild(0).getText())
-      } else if ( getRuleName(node) == "functionDecl" ) {
-          names.push(node.getChild(1).getText())
       } else if (node.children) {
           node.children.forEach(child => {if (getRuleName(child) != "block") { traverse(child)}});
       }
@@ -172,14 +166,13 @@ packageClause:
 },
 sourceFile:
     node => {
-      const locals = scan(node)
-      instrs[wc++] = {tag: 'ENTER_SCOPE', syms: locals} // global env for sourcefile
       for (let i = 0; i < node.getChildCount(); i++) {
         compile(node.getChild(i))
+
       }
       // TODO: RUN MAIN FUNCTIONS
-      instrs[wc++] = { tag: "LD", sym: "main"}
-      instrs[wc++] = {tag: 'CALL', arity: 0}
+    //   instrs[wc++] = { tag: "LD", sym: "main"}
+    //  instrs[wc++] = {tag: 'CALL', arity: 0}
 
         },
 expression:
@@ -216,7 +209,7 @@ basicLit:
       //EVERYTHING NOT A STRING OR BOOLEAN IS A NUMBER
       if (getRuleName(node.getChild(0)) == "string_"){
         instrs[wc++] = { tag: "LDC", val: node.getChild(0).getText() }
-      }
+      }  
     else {instrs[wc++] = { tag: "LDC", val: Number(node.getChild(0).getText())}}
     },
 operandName:
@@ -302,7 +295,7 @@ varSpec:
 
 functionDecl:
     node => {
-      const sym = node.getChild(1).getText()
+      const sym = node.getChild(1)
       const parameters = []
       const signature = node.children.find(child => getRuleName(child) === "signature")
       const paramsNode = signature.children.find(child => getRuleName(child) === "parameters")
@@ -320,33 +313,24 @@ functionDecl:
       }
       instrs[wc++] = {tag: 'LDF', prms: parameters, addr: wc + 1};
       const goto_instruction = {tag: 'GOTO'}
-      instrs[wc++] = goto_instruction
+      //instrs[wc++] = goto_instruction
       const block = node.children.find(child => getRuleName(child) === "block")
       compile(block)
       instrs[wc++] = {tag: 'LDC', val: undefined}
       instrs[wc++] = {tag: 'RESET'}
       goto_instruction.addr = wc;
-      instrs[wc++] = {tag: 'ASSIGN', sym: sym}
       },
 
 
 returnStmt:
       node => {
-        compile(node.getChild(1))
+        compile(node.getChild(0))
         instrs[wc++] = {tag: 'RESET'}
       },
 eos:
     node => {
      null
     },
-
-goStmt:
-  node =>{
-    const functionNameNode = node.children.find(child => getRuleName(child) === "expression")
-    const functionName = functionNameNode.children[0].children[0].children[0];
-    const functionToExecute = resolveFunction(functionName.children[0]);
-    //Execute functionToExecute concurrency
-},
 
 }
 
@@ -425,7 +409,6 @@ LD:
     instr => {
         PC++
         push(OS, lookup(instr.sym, E))
-        console.log("OS IS NOW:::: ",OS)
     },
 ASSIGN:
     instr => {
@@ -435,7 +418,7 @@ ASSIGN:
 LDF:
     instr => {
         PC++
-        push(OS, {tag: 'FUNCTION', prms: instr.prms,
+        push(OS, {tag: 'CLOSURE', prms: instr.prms,
                    addr: instr.addr, env: E})
     },
 CALL:
@@ -482,12 +465,12 @@ RESET :
 
 
 compile_program(tree)
-console.log(instrs)
 const global_frame = {}
 const empty_environment = null
-const global_environment = [global_frame, empty_environment]
+const global_environment =[global_frame, empty_environment]
 
-console.log("RESULT OF RUNNING PROGRAM: ", run())// compile_program(tree)
+console.log(run())// compile_program(tree)
+console.log(instrs)
 function run() {
     OS = []
     PC = 0
@@ -501,10 +484,14 @@ function run() {
         //print_RTS("\nRTS:            "); ");
         //print_RTS("\nRTS:            ");
         const instr = instrs[PC]
-        // console.log("INSTRUCTION IS :::: "+instr.tag)
+        console.log("INSTRUMCTION IS :::: "+instr.tag)
         microcode[instr.tag](instr)
       }
     return peek(OS)
+}
+
+class Routine{
+    constructor(OS, PC, E RTS, instrs)
 }
 
 
