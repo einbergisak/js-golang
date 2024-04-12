@@ -169,10 +169,8 @@ function getRuleName (node){
 
 function findChild(node, ruleName) {
     if (getRuleName(node) == ruleName  ) {
-      console.log("FOUND CHILD")
       return node
     } else if (node.children) {
-      console.log("INSTEAD FOUND ",getRuleName(node))
       for (let i = 0; i < node.getChildCount(); i++){
         let c = findChild(node.getChild(i), ruleName)
         if (c != null){

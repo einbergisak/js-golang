@@ -1,35 +1,42 @@
 import  GoLexer from "./GoLexer.js";
 import GoParser from "./GoParser.js";
 import antlr4 from 'antlr4';
+import Channel from "./channel.js";
 //import GoParserListener from './GoParserListener.js';
  const input = '1+2';
- const input3 = `package main
-
- func myGoroutine() {
-    1;
-    2;
-    3;
-  }
- func main() {
-    0;
-    go myGoroutine()
-    4;
-    5;
-  }
-
-   `
  const input2 = `
 package main
-func main() {
-  var x = true
-  "string"
-  hi(4, 2)
+var mutex sync.Mutex
+func asd(z int, y int) {
+  3;
+  mutex.Lock()
+  4;
+  5;
+  6;
+  mutex.Unlock()
+  7;
+  8;
+  9;
+  10;
+  11;
+  12;
+  return z
 }
-
+func main() {
+  10;
+  go asd(5, 2)
+  13;
+  14;
+  15;
+  16;
+  17;
+  mutex.Lock()
+  20;
+}
 `
 //
 
-const chars = new antlr4.InputStream(input3);
+const chars = new antlr4.InputStream(input2);
 const lexer = new GoLexer(chars);
 //
 lexer.strictMode = false;
@@ -157,7 +164,7 @@ function scan(node) {
   const names = [];
 
   function traverse(node) {
-      if (getRuleName(node) == "identifierList" || getRuleName(node) == "typeName"  ) {
+      if (getRuleName(node) == "identifierList") {
           //console.log("FOUND IDENTIFIER: "+node.getChild(0))
           names.push(node.getChild(0).getText())
       } else if ( getRuleName(node) == "functionDecl" ) {
@@ -208,13 +215,24 @@ expression:
     },
 primaryExpr:
     node =>{
-      if (getRuleName(node.getChild(1)) == "arguments"){
+      let firstChild = node.getChild(0)
+
+    //   console.log(operand.getChild(2))
+    //   console.log(operand.getChild(1).getText())
+
+      if (getRuleName(node.getChild(1)) == "arguments" && (firstChild.getChildCount() < 3 || !(new Set(["Lock", "Unlock"]).has(firstChild.getChild(2).getText())))){
         compile(node.getChild(0))
         let expressionList = node.getChild(1).getChild(1)
         for (let i = 0; i < expressionList.getChildCount(); i++) {
           compile(expressionList.getChild(i))
         }
         instrs[wc++] = {tag: 'CALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() -1}
+      }
+      else if(firstChild.getChildCount() >= 3 && (new Set(["Lock", "Unlock"]).has(firstChild.getChild(2).getText()))){
+        let mutexName = firstChild.getChild(0).getChild(0).getText()
+        compile(node.getChild(0))
+        firstChild.getChild(2).getText() == "Lock" ? instrs[wc++] = {tag: 'LOCK', var: mutexName} : instrs[wc++] = {tag: 'UNLOCK', var: mutexName}
+        instrs[wc++] = { tag: "LDC", val: undefined }
       }
       else{
         compile(node.getChild(0))
@@ -289,6 +307,8 @@ varDecl:
   node => {
       compile(node.getChild(1));
     },
+
+
 identifierList:
 node => {
   null
@@ -301,13 +321,34 @@ varSpec:
         if (identifierList.getChild(i).getText() == ",") {continue}
         symsList.push(identifierList.getChild(i).getText())
       }
-      let values = node.getChild(2)
-      for (let i = 0; i < values.getChildCount(); i++) {
-        if (values.getChild(i).getText() == ","){continue}
-        compile(values.getChild(i))
-        instrs[wc++] = {tag: 'ASSIGN', sym: symsList.shift()}
+    let valuesIndex = 2
+    if(getRuleName(node.getChild(1)) == "type_"){
+        valuesIndex = 3
+        let type = node.getChild(1)
+
+      if (getRuleName(type.getChild(0).getChild(0)) == "qualifiedIdent"){
+        let qualifiedIdent = type.getChild(0).getChild(0)
+        if(qualifiedIdent.getChild(2) == "WaitGroup"){
+            instrs[wc++] = {tag: 'ASSIGN', sym: symsList[0], controlType: "WaitGroup", lockedby : None}
+        }
+        else if(qualifiedIdent.getChild(2) == "Mutex"){
+            instrs[wc++] = {tag: 'LDC', val: false}
+            instrs[wc++] = {tag: 'ASSIGN', sym: symsList[0]}
+        }
       }
+      //either WaitGroup or Mutex
+
+    }
+    else{
+        let values = node.getChild(valuesIndex)
+        for (let i = 0; i < values.getChildCount(); i++) {
+            if (values.getChild(i).getText() == ","){continue}
+            compile(values.getChild(i))
+            instrs[wc++] = {tag: 'ASSIGN', sym: symsList.shift()}
+        }
+    }
     },
+
 
 
 functionDecl:
@@ -477,13 +518,13 @@ GOSTMT:
 },
 GOCALL:
 (instr, routine) => {
-    
+
     const arity = instr.arity
     let args = []
     for (let i = arity - 1; i >= 0; i--)
         args[i] = routine.OS.pop()
     const sf = routine.OS.pop()
-    
+
     if (sf.tag === 'BUILTIN') {
         routine.PC++
         return push(routine.OS, apply_builtin(sf.sym, args))
@@ -492,6 +533,7 @@ GOCALL:
     routine.E = extend(sf.prms, args, sf.env)
     routine.PC = sf.addr
 },
+
 TAIL_CALL:
 (instr, routine) => {
         const arity = instr.arity
@@ -506,6 +548,17 @@ TAIL_CALL:
         // dont push on RTS here
         routine.E = extend(sf.prms, args, sf.env)
         routine.PC = sf.addr
+    },
+
+LOCK:
+    (instr, routine) =>{
+      routine.OS.pop() ? (routine.canRun = false, routine.PC--) : (assign_value(instr.var, true, routine.E), routine.PC++)
+    },
+UNLOCK:
+    (instr, routine) => {
+        routine.PC++
+        routine.OS.pop()
+        assign_value(instr.var, false, routine.E)
     },
 RESET :
 (instr, routine) => {
@@ -535,33 +588,39 @@ class Routine{
         this.RTS = RTS
         this.instrs = instrs
         this.runAfter = Date.now();
+        this.canRun
 
         console.log("NEW ROUTINE STARTED::: " + this.instrs[this.PC].tag)
         //console.log(this.instrs[this.PC])
         //this.runUntil = Date.now();
 
     }
+    checkRunable(){
+        this.canRun = (Date.now() > this.runAfter - 1 ) && this.instrs[this.PC].tag != "DONE" && !waiters.has(this)
+    }
     runRoutine(){
         //this.runUntil = Date.now() + SWITCH_TIME
         let instrCounter = 0
-        while((Date.now() > this.runAfter - 1 ) && instrCounter < INSTRUCTION_ALLOWANCE && this.instrs[this.PC].tag != "DONE" && !waiters.has(this)){
+        this.checkRunable()
+        while(this.canRun && instrCounter < INSTRUCTION_ALLOWANCE){
             const instr = this.instrs[this.PC]
             console.log(instr)
             microcode[instr.tag](instr, this)
             instrCounter++
+            this.checkRunable()
         }
         if (this.instrs[this.PC].tag == "DONE"){
             routinesToWaiters.get(this).forEach(waiters.delete)
             routinesToWaiters.delete(this)
             let delIndex = routines.indexOf(this);
-            if (delIndex > -1) { 
+            if (delIndex > -1) {
             routines.splice(delIndex, 1);
-            console.log("END OF ROUTINE::: " + peek(this.OS)) 
+            console.log("END OF ROUTINE::: " + peek(this.OS))
             }
         }
 
     }
-    
+
 }
 
 let routinesToWaiters = new Map()
