@@ -1,6 +1,7 @@
 import  GoLexer from "./GoLexer.js";
 import GoParser from "./GoParser.js";
 import antlr4 from 'antlr4';
+import Channel from "./channel.js";
 //import GoParserListener from './GoParserListener.js';
  const input = '1+2';
  const input3 = `package main
@@ -21,19 +22,22 @@ import antlr4 from 'antlr4';
    `
  const input2 = `
 package main
-func asd(y int, x int) {
-  for x < y*2 {
-   x = x + 1
-  }
-  return x
-  1;
-  2;
-  3;
-}
+// func asd(y int, x int) {
+//   t := 10
+//   for x <= y*2 {
+//    x = x + t
+//   }
+//   return x
+//   1;
+//   2;
+//   3;
+// }
 func main() {
-  var z = 0
+  // z := 0
+
   var y = 5 + 2 / 4
-  return asd(y, 3)
+  c := make(chan int)
+  return 3
 }
 `
 //
@@ -155,7 +159,7 @@ let wc
 
 let instrs
 
-const IGNOREABLE = new Set( ["expressionStmt", "operand", "literal", "statement", "simpleStmt", "expressionList", "declaration"])
+const IGNOREABLE = new Set( ["typeLit","expressionStmt", "operand", "literal", "statement", "simpleStmt", "expressionList", "declaration"])
 
 function getRuleName (node){
   return parser.ruleNames[node?.ruleIndex]
@@ -165,11 +169,18 @@ function getRuleName (node){
 
 function findChild(node, ruleName) {
     if (getRuleName(node) == ruleName  ) {
-        return node
+      console.log("FOUND CHILD")
+      return node
     } else if (node.children) {
-        node.children.forEach(child => {x = traverse(child); if (x) {return x}});
+      console.log("INSTEAD FOUND ",getRuleName(node))
+      for (let i = 0; i < node.getChildCount(); i++){
+        let c = findChild(node.getChild(i), ruleName)
+        if (c != null){
+          return c
+        }
+      }
     }
-    return
+    return null
 }
 
 
@@ -227,6 +238,10 @@ expression:
             compile(node.getChild(0))
         }
     },
+channelType:
+    node => {
+        instrs[wc++] = { tag: "LDC", val: findChild(node, "typeName").getChild(0).getText()}
+      },
 primaryExpr:
     node =>{
       if (getRuleName(node.getChild(1)) == "arguments"){
@@ -316,6 +331,10 @@ varDecl:
 identifierList:
   node => {
     null
+  },
+shortVarDecl:
+  node => {
+    compile_comp['varSpec'](node)
   },
 varSpec:
     node => {
@@ -556,6 +575,23 @@ const empty_environment = null
 const global_environment = [global_frame, empty_environment]
 const INSTRUCTION_ALLOWANCE = 2
 
+
+const builtin_mapping = {
+  print: console.log,
+  make: createChannel,
+}
+
+const apply_builtin = (builtin_symbol, args) =>
+  builtin_mapping[builtin_symbol](...args)
+
+
+// fill global frame with built-in objects
+for (const key in builtin_mapping)
+    global_frame[key] = { tag:   'BUILTIN',
+                          sym:   key,
+                          arity: builtin_mapping[key].length
+                        }
+
 class Routine{
     constructor(OS, PC, E, RTS, instrs){
         this.OS = OS
@@ -575,7 +611,7 @@ class Routine{
         let instrCounter = 0
         while((Date.now() > this.runAfter - 1 ) && instrCounter < INSTRUCTION_ALLOWANCE && this.instrs[this.PC].tag != "DONE" && !waiters.has(this)){
             const instr = this.instrs[this.PC]
-            console.log(instr)
+
             microcode[instr.tag](instr, this)
             instrCounter++
         }
@@ -612,7 +648,9 @@ function run2() {
 
 run2()
 
-
+function createChannel(type) {
+  return new Channel()
+}
 
 
 
