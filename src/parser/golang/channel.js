@@ -5,6 +5,7 @@ class Channel {
   }
 
   async send(data) {
+    console.log("SENDINGSENDING")
     if (this.receiveQueue.length > 0) {
       const receiver = this.receiveQueue.shift();
       receiver.resolve(data);
@@ -16,10 +17,11 @@ class Channel {
   }
 
   async receive() {
+    console.log("RECEIVINGRECEIVING")
     if (this.sendQueue.length > 0) {
       const resolveSender = this.sendQueue.shift();
       return resolveSender();
-     } else {
+    } else {
       return await new Promise(resolve => { // await until resolved by sender
         this.receiveQueue.push(resolve);
       });
