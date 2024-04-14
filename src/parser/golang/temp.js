@@ -6,7 +6,7 @@ import antlr4 from 'antlr4';
 const input = `
 package main
 func main() {
-    var z = 0
+    z := make(chan int)
     var y = 5 + 3 / 4
     func asd(x int) {
       return x * 2

@@ -16,11 +16,18 @@ let content = "public class SampleClass { void DoSomething(){} }";
 //
 const input = '1+2';
 const input2 = `
-package main
-func greet(arg1 string, arg2 int) {
-    var age int = 30
-    surname := "bob"
+func asd(y int, x int) {
+    for x < y*2 {
+      x = x + 2
+    }
+    return x
 }
+ func main() {
+    var z = 0
+    var y = 5 + 2 / 4
+    return asd(y, 2)
+  }
+
 `
 
 const getRuleName = (node) => parser.ruleNames[node.ruleIndex]
