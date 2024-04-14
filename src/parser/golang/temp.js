@@ -268,10 +268,8 @@ const compile_comp = {
   primaryExpr:
     node => {
       let firstChild = node.getChild(0)
-      console.log(firstChild.getChild(2))
       //   console.log(operand.getChild(1).getText())
-
-      if (getRuleName(node.getChild(1)) == "arguments" && (firstChild.getChildCount() < 3 || !(new Set(["Lock", "Unlock"]).has(firstChild.getChild(2).getText())))) {
+      if (getRuleName(node.getChild(1)) == "arguments" && (firstChild.getChildCount() < 3 || !(new Set(["Lock", "Unlock", "Add", "Wait", "Done"]).has(firstChild.getChild(2).getText())))) {
         compile(node.getChild(0))
         let expressionList = node.getChild(1).getChild(1)
         for (let i = 0; i < expressionList.getChildCount(); i++) {
@@ -285,11 +283,11 @@ const compile_comp = {
         firstChild.getChild(2).getText() == "Lock" ? instrs[wc++] = { tag: 'LOCK', var: mutexName } : instrs[wc++] = { tag: 'UNLOCK', var: mutexName }
         instrs[wc++] = { tag: "LDC", val: undefined }
       }
-      else if (firstChild.getChildCount() >= 3 && (new Set(["Done", "Add", "Wait"]).has(firstChild.getChild(2).getText()))) {
+      else if (firstChild.getChild(2) != null && (new Set(["Done", "Add", "Wait"]).has(firstChild.getChild(2).getText()))) {
         let waitName = firstChild.getChild(0).getChild(0).getText()
-        compile(node.getChild())
+        compile(node.getChild(0))
         if (firstChild.getChild(2).getText() == "Add") {
-          let addValue = findChild(firstChild, "integer").getText()
+          console.log(getRuleName(firstChild.getChild(1)))
           instrs[wc++] = { tag: "WG_ADD", var: waitName, val: addValue }
         }
         else {

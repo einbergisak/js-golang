@@ -38,7 +38,8 @@ func main() {
   var y = 5 + 2 / 4
   c := make(chan int)
   c <- y
-  return 3
+  x := <-c
+  return x
 }
 `
 //
