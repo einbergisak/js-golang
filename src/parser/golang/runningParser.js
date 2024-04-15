@@ -36,10 +36,16 @@ func main() {
   // z := 0
 
   var y = 5 + 2 / 4
-  c := make(chan int)
-  c <- y
-  x := <-c
-  return x
+  // c := make(chan int)
+  // c <- y
+  // x := <-c
+  t := 0
+  for t < y {
+    t = t + 1
+    print("hallå ",t)
+  }
+
+  return 2
 }
 `
 //
