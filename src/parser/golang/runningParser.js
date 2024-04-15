@@ -6,21 +6,38 @@ import Channel from "./channel.js";
 const input = '1+2';
 const input3 = `package main
 
- func myGoroutine() {
-    1;
-    2;
-    3;
-  }
- func main() {
-    0;
-    go myGoroutine()
-    4;
-    5;
-    6;
-  }
-
    `
 const input2 = `
+package main
+var mutex sync.Mutex
+func asd(z int, y int) {
+  3;
+  mutex.Lock()
+  4;
+  5;
+  6;
+  mutex.Unlock()
+  7;
+  8;
+  9;
+  10;
+  11;
+  12;
+  return z
+}
+func main() {
+  10;
+  go asd(5, 2)
+  13;
+  14;
+  15;
+  16;
+  17;
+  mutex.Lock()
+  20;
+}
+`
+const input4 = `
 package main
 // func asd(y int, x int) {
 //   t := 10
@@ -48,9 +65,40 @@ func main() {
   return 2
 }
 `
+const input5 = `
+func main() {
+  ch := make(chan int, 2) 
+  ch <- 3  
+  ch <- 4 
+  print("Sent 3 and 4")
+  print("Received:", <-ch)
+  print("Received:", <-ch)
+}
+`
+
+const input6 = `
+func sender(ch chan<-int) {
+    ch <- 3
+    print("ayo")
+}
+
+func receiver(ch <-chan int) {
+    x := <-ch
+    return x
+}
+
+func main() {
+  c := make(chan int)
+  go sender(c)
+  return receiver(c)
+
+}`
+
+
+
 //
 
-const chars = new antlr4.InputStream(input2);
+const chars = new antlr4.InputStream(input5);
 const lexer = new GoLexer(chars);
 //
 lexer.strictMode = false;
@@ -119,7 +167,7 @@ const assign_value = (x, v, e) => {
   }
 }
 
-const apply_binop = (op, v2, v1) => binop_microcode[op](v1, v2)
+const apply_binop = (routine, op, v2, v1) => binop_microcode[op](v1, v2, routine)
 
 function is_number(value) {
   return typeof value === 'number';
@@ -151,7 +199,7 @@ const binop_microcode = {
   '>': (x, y) => x > y,
   '==': (x, y) => x === y,
   '!==': (x, y) => x !== y,
-  '<-': (x, y) => x.send(y)
+  '<-': (x, y, routine) => (console.log("X IS::::::",x), x.send(routine, y))
 }
 
 
@@ -160,10 +208,10 @@ const unop_microcode = {
   '!': x => is_boolean(x)
     ? !x
     : error(x, '! expects boolean, found:'),
-  '<-': x => x.receive()
+  '<-': (x, routine) => x.receive(routine)
 }
 
-const apply_unop = (op, v) => unop_microcode[op](v)
+const apply_unop = (routine, op, v) => unop_microcode[op](v, routine)
 
 let wc
 
@@ -255,7 +303,9 @@ const compile_comp = {
     },
   primaryExpr:
     node => {
-      if (getRuleName(node.getChild(1)) == "arguments") {
+      let firstChild = node.getChild(0)
+      //   console.log(operand.getChild(1).getText())
+      if (getRuleName(node.getChild(1)) == "arguments" && (firstChild.getChildCount() < 3 || !(new Set(["Lock", "Unlock", "Add", "Wait", "Done"]).has(firstChild.getChild(2).getText())))) {
         compile(node.getChild(0))
         let expressionList = node.getChild(1).getChild(1)
         for (let i = 0; i < expressionList.getChildCount(); i++) {
@@ -263,8 +313,26 @@ const compile_comp = {
         }
         instrs[wc++] = { tag: 'CALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() - 1 }
       }
+      else if (firstChild.getChildCount() >= 3 && (new Set(["Lock", "Unlock"]).has(firstChild.getChild(2).getText()))) {
+        let mutexName = firstChild.getChild(0).getChild(0).getText()
+        firstChild.getChild(2).getText() == "Lock" ? instrs[wc++] = { tag: 'LOCK', var: mutexName } : instrs[wc++] = { tag: 'UNLOCK', var: mutexName }
+        instrs[wc++] = { tag: "LDC", val: undefined }
+      }
+      else if (firstChild.getChild(2) != null && (new Set(["Done", "Add", "Wait"]).has(firstChild.getChild(2).getText()))) {
+        let waitName = firstChild.getChild(0).getChild(0).getText()
+        //compile(node.getChild(0))
+        if (firstChild.getChild(2).getText() == "Add") {
+          compile(node.getChild(1).getChild(1)) // Argument
+          instrs[wc++] = { tag: "WG_ADD", var: waitName}
+        }
+        else {
+          firstChild.getChild(2).getText() == "Wait" ? instrs[wc++] = { tag: 'WG_WAIT', var: waitName } : instrs[wc++] = { tag: 'WG_DONE', var: waitName }
+        }
+        instrs[wc++] = { tag: "LDC", val: undefined }
+      }
       else {
         compile(node.getChild(0))
+
       }
 
     },
@@ -292,7 +360,7 @@ const compile_comp = {
     node => {
       let pred = node.getChild(1);
       let cons = node.getChild(2);
-      let alt = node.getChild(4)
+      let alt = node.getChild(4);
       compile(pred)
       const jump_on_false_instruction = { tag: 'JOF' }
       instrs[wc++] = jump_on_false_instruction
@@ -328,11 +396,10 @@ const compile_comp = {
     node => {
       if (node.getChildCount === 0)
         return instrs[wc++] = { tag: "LDC", val: undefined } // TODO: required?
-      let first = true
       for (let i = 0; i < node.getChildCount(); i++) {
-        first ? first = false
-          : (getRuleName(node.getChild(i)) !== "eos" ? instrs[wc++] = { tag: 'POP' } : null)
         compile(node.getChild(i));
+
+        getRuleName(node.getChild(i)) != "eos" ? instrs[wc++] = { tag: 'POP' }: null
       }
     },
   varDecl:
@@ -355,11 +422,31 @@ const compile_comp = {
         if (identifierList.getChild(i).getText() == ",") { continue }
         symsList.push(identifierList.getChild(i).getText())
       }
-      let values = node.getChild(2)
-      for (let i = 0; i < values.getChildCount(); i++) {
-        if (values.getChild(i).getText() == ",") { continue }
-        compile(values.getChild(i))
-        instrs[wc++] = { tag: 'ASSIGN', sym: symsList.shift() }
+      let valuesIndex = 2
+      if (getRuleName(node.getChild(1)) == "type_") {
+        valuesIndex = 3
+        let type = node.getChild(1)
+
+        if (getRuleName(type.getChild(0).getChild(0)) == "qualifiedIdent") {
+          let qualifiedIdent = type.getChild(0).getChild(0)
+          if (qualifiedIdent.getChild(2) == "WaitGroup") {
+            instrs[wc++] = { tag: 'LDC', val: 0 }
+            instrs[wc++] = { tag: 'ASSIGN', sym: symsList[0] }
+          }
+          else if (qualifiedIdent.getChild(2) == "Mutex") {
+            instrs[wc++] = { tag: 'LDC', val: false }
+            instrs[wc++] = { tag: 'ASSIGN', sym: symsList[0] }
+          }
+        }
+
+      }
+      else {
+        let values = node.getChild(valuesIndex)
+        for (let i = 0; i < values.getChildCount(); i++) {
+          if (values.getChild(i).getText() == ",") { continue }
+          compile(values.getChild(i))
+          instrs[wc++] = { tag: 'ASSIGN', sym: symsList.shift() }
+        }
       }
     },
   assignment:
@@ -367,6 +454,7 @@ const compile_comp = {
       compile(node.getChild(2))
       console.log("ASSIGNMENT========== ", parseTreeToJSON(node, parser))
       instrs[wc++] = { tag: 'ASSIGN', sym: node.getChild(0).getChild(0).getText() }
+      instrs[wc++] = { tag: "LDC", val: undefined}
     },
 
   functionDecl:
@@ -431,9 +519,8 @@ const compile_comp = {
 // starting at wc (write counter)
 const compile = node => {
   let ruleName = getRuleName(node)
-  //console.log("RULE NAME IS: ", ruleName)
   if (IGNOREABLE.has(ruleName)) {
-    compile(node.getChild(0))
+    node.getChild(0).getText() === "(" ? compile(node.getChild(1)): compile(node.getChild(0))
   } else {
     let f = compile_comp[getRuleName(node)]
     if (typeof f != "function")
@@ -460,12 +547,12 @@ const microcode = {
   UNOP:
     (instr, routine) => {
       routine.PC++
-      push(routine.OS, apply_unop(instr.sym, routine.OS.pop()))
+      push(routine.OS, apply_unop(routine, instr.sym, routine.OS.pop()))
     },
   BINOP:
     (instr, routine) => {
       routine.PC++
-      push(routine.OS, apply_binop(instr.sym, routine.OS.pop(), routine.OS.pop()))
+      push(routine.OS, apply_binop(routine, instr.sym, routine.OS.pop(), routine.OS.pop()))
     },
   POP:
     (instr, routine) => {
@@ -529,7 +616,6 @@ const microcode = {
   GOSTMT:
     (instr, routine) => {
       let newRoutine = new Routine(routine.OS.slice(), routine.PC + 1, routine.E, routine.RTS.slice(), instrs)
-      routinesToWaiters.set(newRoutine, [])
       routines.push(newRoutine)
       while (instrs[routine.PC].tag != "GOCALL") {
         routine.PC++
@@ -553,21 +639,39 @@ const microcode = {
       routine.E = extend(sf.prms, args, sf.env)
       routine.PC = sf.addr
     },
-  TAIL_CALL:
+  LOCK:
     (instr, routine) => {
-      const arity = instr.arity
-      let args = []
-      for (let i = arity - 1; i >= 0; i--)
-        args[i] = routine.OS.pop()
-      const sf = routine.OS.pop()
-      if (sf.tag === 'BUILTIN') {
-        routine.PC++
-        return push(routine.OS, apply_builtin(sf.sym, args))
-      }
-      // dont push on RTS here
-      routine.E = extend(sf.prms, args, sf.env)
-      routine.PC = sf.addr
+
+      lookup(instr.var, routine.E) ? routine.instrCounter = INSTRUCTION_ALLOWANCE : (assign_value(instr.var, true, routine.E), routine.PC++)
     },
+  UNLOCK:
+    (instr, routine) => {
+      routine.PC++
+      assign_value(instr.var, false, routine.E)
+    },
+  WG_ADD: (instr, routine) => {
+    routine.PC++
+    let waitGroupCount = lookup(instr.var, routine.E)
+    let val = routine.OS.pop()
+    waitGroupCount += val
+    assign_value(instr.var, waitGroupCount, routine.E)
+  },
+  WG_DONE: (instr, routine) => {
+    routine.PC++
+    let waitGroupCount = lookup(instr.var, routine.E)
+    waitGroupCount -= 1
+    assign_value(instr.var, waitGroupCount, routine.E)
+  },
+  WG_WAIT: (instr, routine) => {
+    let waitGroupCount = lookup(instr.var, routine.E)
+    if (waitGroupCount == 0) {
+      routine.PC++
+      routine.canRun = true
+    } else {
+      routine.canRun = false
+      routine.instrCounter = INSTRUCTION_ALLOWANCE // set to max to suspend
+    }
+  },
   RESET:
     (instr, routine) => {
       // keep popping...
@@ -615,28 +719,29 @@ class Routine {
     this.RTS = RTS
     this.instrs = instrs
     this.runAfter = Date.now();
+    this.instrCounter = 0
 
-    console.log("NEW ROUTINE STARTED::: " + this.instrs[this.PC].tag)
+    //console.log("NEW ROUTINE STARTED::: " + this.instrs[this.PC].tag)
     //console.log(this.instrs[this.PC])
     //this.runUntil = Date.now();
 
   }
+
   runRoutine() {
     //this.runUntil = Date.now() + SWITCH_TIME
-    let instrCounter = 0
-    while ((Date.now() > this.runAfter - 1) && instrCounter < INSTRUCTION_ALLOWANCE && this.instrs[this.PC].tag != "DONE" && !waiters.has(this)) {
+    this.instrCounter = 0
+    while (this.instrs[this.PC].tag != "DONE" && this.instrCounter < INSTRUCTION_ALLOWANCE) {
       const instr = this.instrs[this.PC]
       console.log(instr)
       microcode[instr.tag](instr, this)
-      instrCounter++
+      this.instrCounter++
+
     }
     if (this.instrs[this.PC].tag == "DONE") {
-      routinesToWaiters.get(this).forEach(waiters.delete)
-      routinesToWaiters.delete(this)
       let delIndex = routines.indexOf(this);
       if (delIndex > -1) {
         routines.splice(delIndex, 1);
-        console.log("END OF ROUTINE::: " + peek(this.OS))
+        //console.log("END OF ROUTINE::: " + peek(this.OS))
       }
     }
 
@@ -644,31 +749,29 @@ class Routine {
 
 }
 
-let routinesToWaiters = new Map()
 let routines = []
-let waiters = new Set()
-function run2() {
+
+
+run()
+
+function run() {
   const main = new Routine([], 0, global_environment, [], instrs)
-  routinesToWaiters.set(main, [])
   routines.push(main)
   let index = 0
   while (routines.length > 0) {
-    let routine = routines[index]
-    if (!waiters.has(routine)) { routine.runRoutine() }
+    routines[index].runRoutine()
     index = (index + 1) % routines.length
-    // console.log(routines)
+    //console.log(routines)
     console.log(index)
   }
 }
-
-run2()
 
 function createChannel(type) {
   return new Channel()
 }
 
 
-
+// only for debugging purposes
 function parseTreeToJSON(tree, parser) {
   if (tree.getChildCount() === 0) {
     return tree.getText();
