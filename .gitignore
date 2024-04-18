@@ -3,6 +3,8 @@ node_modules
 !docs/jsdoc/templates/**/*.js
 !docs/lib/**/*.js
 !src/parser/golang/*
+!src/golang/*
+!src/golang/goParsing/*
 *.map
 dist/
 .idea/
