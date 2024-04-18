@@ -8,7 +8,9 @@ class Channel {
 
   send(routine, data) {
     console.log("SENDINGSENDING")
-
+    if (!this.senderQueue.includes(routine)){
+      this.senderQueue.push(routine)
+    }
     if (!this.sendInProgress && this.receiverQueue.length > 0) {
       const receiver = this.receiverQueue.shift();
       receiver.canRun = true
@@ -16,16 +18,17 @@ class Channel {
       console.log("SENDING VALUE ",this.value)
       this.sendInProgress = true
       return
-    } else if (!this.senderQueue.includes(routine)){
-      routine.canRun = false
-      routine.PC -= 3
-      this.senderQueue.push(routine)
-    }
+    } 
+    routine.canRun = false
+    routine.PC -= 3
   }
 
   receive(routine) {
     console.log("RECEIVINGRECEIVING")
 
+    if (!this.receiverQueue.includes(routine)){
+      this.receiverQueue.push(routine)
+    }
     if (this.sendInProgress && this.senderQueue.length > 0) {
       const sender = this.senderQueue.shift();
       this.sendInProgress = false
@@ -34,11 +37,9 @@ class Channel {
       this.value = null
       sender.canRun = true
       return val
-    } else if (!this.receiverQueue.includes(routine)){
-      routine.canRun = false
-      routine.PC -= 2
-      this.receiverQueue.push(routine)
     }
+    routine.canRun = false
+    routine.PC -= 2
   }
 }
 export default Channel
