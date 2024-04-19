@@ -2,6 +2,8 @@ import GoLexer from "./goParsing/GoLexer.js";
 import GoParser from "./goParsing/GoParser.js";
 import antlr4 from 'antlr4';
 import Channel from "./channel.js";
+import Mutex from "./mutex.js";
+import WaitGroup from "./waitGroup.js";
 //Insert here testcase
 let parser
 function parse(input){
@@ -47,7 +49,7 @@ const tail = (x) => x[1]  // TODO: x[1] instead?
 const extend = (xs, vs, e) => {
 
 
-  if (vs.length > xs.length) error('too many arguments')
+  if (vs.length > xs.length) error('too many arguments; got ',vs.length, ' expected ',xs.length)
   if (vs.length < xs.length) error('too few arguments')
   const new_frame = {}
   for (let i = 0; i < xs.length; i++)
@@ -78,6 +80,8 @@ const assign_value = (x, v, e) => {
 const builtin_mapping = {
   print: console.log,
   make: createChannel,
+  createMutex: createMutex,
+  createWaitGroup: createWaitGroup
 }
 
 const apply_builtin = (builtin_symbol, args) =>
@@ -143,6 +147,14 @@ const apply_unop = (routine, op, v) => unop_microcode[op](v, routine)
 
 function createChannel(type) {
   return new Channel()
+}
+
+function createMutex() {
+  return new Mutex()
+}
+
+function createWaitGroup() {
+  return new WaitGroup()
 }
 
 function getRuleName(node) {
@@ -363,11 +375,13 @@ const compile_comp = {
         if (getRuleName(type.getChild(0).getChild(0)) == "qualifiedIdent") {
           let qualifiedIdent = type.getChild(0).getChild(0)
           if (qualifiedIdent.getChild(2) == "WaitGroup") {
-            instrs[wc++] = { tag: 'LDC', val: 0 }
+            instrs[wc++] = { tag: 'LD', sym: 'createWaitGroup' }
+            instrs[wc++] = { tag: 'CALL', arity: 0 }
             instrs[wc++] = { tag: 'ASSIGN', sym: symsList[0] }
           }
           else if (qualifiedIdent.getChild(2) == "Mutex") {
-            instrs[wc++] = { tag: 'LDC', val: false }
+            instrs[wc++] = { tag: 'LD', sym: 'createMutex' }
+            instrs[wc++] = { tag: 'CALL', arity: 0 }
             instrs[wc++] = { tag: 'ASSIGN', sym: symsList[0] }
           }
         }
@@ -568,35 +582,35 @@ const microcode = {
         return push(routine.OS, apply_builtin(sf.sym, args))
       }
       push(routine.RTS, { tag: 'CALL_FRAME', addr: instrs.length - 1, env: routine.E })
+      console.log("CALLING FUNCTION: ", sf)
       routine.E = extend(sf.prms, args, sf.env)
       routine.PC = sf.addr
     },
   LOCK:
     (instr, routine) => {
-
-      lookup(instr.var, routine.E) ? routine.instrCounter = INSTRUCTION_ALLOWANCE : (assign_value(instr.var, true, routine.E), routine.PC++)
+      const mutex = lookup(instr.var, routine.E)
+      mutex.isLocked ? routine.instrCounter = INSTRUCTION_ALLOWANCE : (mutex.lock(), routine.PC++)
     },
   UNLOCK:
     (instr, routine) => {
       routine.PC++
-      assign_value(instr.var, false, routine.E)
+      const mutex = lookup(instr.var, routine.E)
+      mutex.unlock()
     },
   WG_ADD: (instr, routine) => {
     routine.PC++
-    let waitGroupCount = lookup(instr.var, routine.E)
+    const waitGroup = lookup(instr.var, routine.E)
     let val = routine.OS.pop()
-    waitGroupCount += val
-    assign_value(instr.var, waitGroupCount, routine.E)
+    waitGroup.increment(val)
   },
   WG_DONE: (instr, routine) => {
     routine.PC++
-    let waitGroupCount = lookup(instr.var, routine.E)
-    waitGroupCount -= 1
-    assign_value(instr.var, waitGroupCount, routine.E)
+    const waitGroup = lookup(instr.var, routine.E)
+    waitGroup.decrement()
   },
   WG_WAIT: (instr, routine) => {
-    let waitGroupCount = lookup(instr.var, routine.E)
-    if (waitGroupCount == 0) {
+    let waitGroup = lookup(instr.var, routine.E)
+    if (waitGroup.count == 0) {
       routine.PC++
     } else {
       routine.instrCounter = INSTRUCTION_ALLOWANCE // set to max to suspend
@@ -706,7 +720,7 @@ function parseAndRun(input){
   buitinsToGlobalFrame()
 
   compile_program(parse(input))
-  //console.log(instrs)
+  console.log(instrs)
   run()
 }
 
@@ -741,10 +755,8 @@ test(
 test(
   `package main
 
-  var myMutex sync.Mutex
-  var myWg sync.WaitGroup
-
-  func startFrom(x int) int {
+  func startFrom(x int, myMutex Mutex, myWG WaitGroup) {
+    console.log("STARTFROM")
     y:= 0
     for (y < 10){
       print(x + y)
@@ -754,22 +766,69 @@ test(
       }
     }
     myMutex.Unlock()
-    myWg.Done()
+    myWG.Done()
 
   }
 
   func main() {
-    go startFrom(0)
-    go startFrom(10)
-    go startFrom(20)
-    go startFrom(30)
-    myWg.Add(2)
+    var myMutex sync.Mutex
+    var myWG sync.WaitGroup
+    var x = 0
+
+    go startFrom(x, myMutex, myWG)
+    go startFrom(10, myMutex, myWG)
+    go startFrom(20, myMutex, myWG)
+    go startFrom(30, myMutex, myWG)
+    myWG.Add(2)
     print("near beginning")
-    myWg.Wait()
+    myWG.Wait()
     print("after two finished")
   }`,
   "complicated"
 )
+
+// test(
+//   `package main
+
+//   var myMutex sync.Mutex
+//   var myWG sync.WaitGroup
+
+//   func startFrom(x int) int {
+//     y:= 0
+//     for (y < 10){
+//       print(x + y)
+//       y = y + 1
+//       if (x + y == 22 || x + y == 32){
+//         myMutex.Lock()
+//       }
+//     }
+//     myMutex.Unlock()
+//     myWG.Done()
+
+//   }
+
+//   func receiveAndPrint(ch <-chan int) {
+//     x := <-ch
+//     print("received value: ",x)
+//   }
+
+//   func main() {
+//     var x = 0
+//     ch := make(chan int)
+//     go receiveAndPrint(ch)
+
+//     go startFrom(x)
+//     go startFrom(10)
+//     go startFrom(20)
+//     go startFrom(30)
+//     myWG.Add(2)
+//     print("near beginning")
+//     myWG.Wait()
+//     print("after two finished")
+//     ch <- 7
+//   }`,
+//   "complicated"
+// )
 
 
 
