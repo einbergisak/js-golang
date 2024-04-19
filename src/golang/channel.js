@@ -17,7 +17,7 @@ class Channel {
     if (!this.sendInProgress && this.receiverQueue.length > 0) {
       const receiver = this.receiverQueue.shift();
       this.value = data
-      //nsole.log("SENDING VALUE ",this.value)
+      // console.log("SENDING VALUE ",this.value)
       this.sendInProgress = true
       return
     }
