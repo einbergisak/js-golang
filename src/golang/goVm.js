@@ -2,9 +2,7 @@ import GoLexer from "./goParsing/GoLexer.js";
 import GoParser from "./goParsing/GoParser.js";
 import antlr4 from 'antlr4';
 import Channel from "./channel.js";
-//import GoParserListener from './GoParserListener.js';
 //Insert here testcase
-
 let parser
 function parse(input){
 let chars = new antlr4.InputStream(input);
@@ -108,6 +106,7 @@ function is_boolean(value) {
 }
 
 
+
 const binop_microcode = {
 
   '+': (x, y) => (is_number(x) && is_number(y)) ||
@@ -142,6 +141,9 @@ const unop_microcode = {
 
 const apply_unop = (routine, op, v) => unop_microcode[op](v, routine)
 
+function createChannel(type) {
+  return new Channel()
+}
 
 function getRuleName(node) {
   return parser.ruleNames[node?.ruleIndex]
@@ -229,13 +231,13 @@ const compile_comp = {
     node => { // compile as expression instead, will be treated as binary operation
       compile_comp['expression'](node)
     },
-  
+
     primaryExpr:
     node => {
-      
+
       let methodName = node.getChild(0).getChild(2)
       //   console.log(operand.getChild(1).getText())
-      
+
       if (methodName != null && (["Lock", "Unlock"].includes(methodName.getText()))) {
         let mutexName = findChild(node, "operandName").getText()
         methodName.getText() == "Lock" ? instrs[wc++] = { tag: 'LOCK', var: mutexName } : instrs[wc++] = { tag: 'UNLOCK', var: mutexName }
@@ -613,11 +615,6 @@ const microcode = {
 }
 
 
-
-
-
-
-
 class Routine {
   constructor(OS, PC, E, RTS, instrs) {
     this.OS = OS
@@ -656,7 +653,6 @@ class Routine {
 }
 
 
-
 function run() {
   const main = new Routine([], 0, global_environment, [], instrs)
   routines.push(main)
@@ -669,9 +665,6 @@ function run() {
   }
 }
 
-function createChannel(type) {
-  return new Channel()
-}
 
 
 // only for debugging purposes
@@ -702,10 +695,10 @@ let global_frame
 let routines
 let empty_environment
 let global_environment
-const INSTRUCTION_ALLOWANCE = 2
+export const INSTRUCTION_ALLOWANCE = 2
 
 function parseAndRun(input){
-  
+
   routines =[]
   global_frame = {}
   empty_environment = null
@@ -731,7 +724,7 @@ test(
   `package main
   func main(){
     print("Hello World")
-  }`, 
+  }`,
 'Hello World')
 
 test(
@@ -762,7 +755,7 @@ test(
     }
     myMutex.Unlock()
     myWg.Done()
-     
+
   }
 
   func main() {
@@ -778,13 +771,5 @@ test(
   "complicated"
 )
 
-test(
-  `package main
-  var myMutex sync.Mutex
-  func main(){
-    myMutex.Lock()
-    myMutex.Unlock()
-    print("Hello World")
-  }`, 
-'Hello World')
+
 

@@ -1,3 +1,4 @@
+import { INSTRUCTION_ALLOWANCE } from "./goVm.js"
 class Channel {
   constructor() {
     this.value = null
@@ -6,6 +7,8 @@ class Channel {
     this.sendInProgress = false
   }
 
+  // waitgroup och mutex till klass????
+
   send(routine, data) {
     //console.log("SENDINGSENDING")
     if (!this.senderQueue.includes(routine)){
@@ -13,13 +16,12 @@ class Channel {
     }
     if (!this.sendInProgress && this.receiverQueue.length > 0) {
       const receiver = this.receiverQueue.shift();
-      receiver.canRun = true
       this.value = data
       console.log("SENDING VALUE ",this.value)
       this.sendInProgress = true
       return
-    } 
-    routine.canRun = false
+    }
+    routine.instrCounter = INSTRUCTION_ALLOWANCE // Suspend routine
     routine.PC -= 3
   }
 
@@ -35,10 +37,9 @@ class Channel {
       const val = this.value
       //console.log("RECEIVED VALUE ",val)
       this.value = null
-      sender.canRun = true
       return val
     }
-    routine.canRun = false
+    routine.instrCounter = INSTRUCTION_ALLOWANCE // Suspend routine
     routine.PC -= 2
   }
 }
