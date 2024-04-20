@@ -273,7 +273,7 @@ const compile_comp = {
         for (let i = 0; i < expressionList.getChildCount(); i++) {
           compile(expressionList.getChild(i))
         }
-        instrs[wc++] = { tag: 'CALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() - 1 }
+        instrs[wc++] = { tag: 'CALL', arity: expressionList.getChildCount() == 0 ? 0 : (expressionList.getChildCount() + 1)/2}
       }
       else {
         compile(node.getChild(0))
@@ -453,7 +453,7 @@ const compile_comp = {
       for (let i = 0; i < expressionList.getChildCount(); i++) {
         compile(expressionList.getChild(i))
       }
-      instrs[wc++] = { tag: 'GOCALL', arity: expressionList.getChildCount() < 2 ? expressionList.getChildCount() : expressionList.getChildCount() - 1 }
+      instrs[wc++] = { tag: 'GOCALL', arity: expressionList.getChildCount() == 0 ? 0 : (expressionList.getChildCount() + 1)/2}
       instrs[wc++] = { tag: 'LDC', val: undefined }
 
     },
