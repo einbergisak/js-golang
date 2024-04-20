@@ -14,4 +14,4 @@
 -cd src/golang
 node goVm.js
 
-To run these test cases, just run node goVm.js to see the output in the terminal. It is possible to create more custom test cases by using the function test() in the desire testcase, see the bottom of the file goVm.js.
+To run these test cases, just run node goVm.js to see the output in the terminal. It is possible to create more custom test cases by using the function test(). See the bottom of the file src/golang/goVm.js.
