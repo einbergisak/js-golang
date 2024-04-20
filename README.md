@@ -7,7 +7,7 @@
 
 -nvm install 12.22.7 (Note: any version in the 12v to 14v range should work. We also tested v14.16.1 which worked)
 
--nvm user 12 (To use installed version)
+-nvm use 12 (To use installed version)
 
 -npm install
 
