@@ -1,7 +1,6 @@
 class WaitGroup {
     constructor(){
         this.count = 0
-        console.log("CREATING WAITGROUP")
     }
 
     decrement(){

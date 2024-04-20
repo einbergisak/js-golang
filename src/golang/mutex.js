@@ -9,6 +9,7 @@ class Mutex {
 
     unlock() {
         this.isLocked = false
+
     }
 }
 export default Mutex

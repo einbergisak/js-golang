@@ -582,7 +582,7 @@ const microcode = {
         return push(routine.OS, apply_builtin(sf.sym, args))
       }
       push(routine.RTS, { tag: 'CALL_FRAME', addr: instrs.length - 1, env: routine.E })
-      console.log("CALLING FUNCTION: ", sf)
+      //console.log("CALLING FUNCTION: ", sf)
       routine.E = extend(sf.prms, args, sf.env)
       routine.PC = sf.addr
     },
@@ -720,7 +720,7 @@ function parseAndRun(input){
   buitinsToGlobalFrame()
 
   compile_program(parse(input))
-  console.log(instrs)
+  //console.log(instrs)
   run()
 }
 
@@ -739,7 +739,7 @@ test(
   func main(){
     print("Hello World")
   }`,
-'Hello World')
+  `"Hello World"`)
 
 test(
   `package main
@@ -754,11 +754,164 @@ test(
 
 test(
   `package main
+  func test(id int) {
+    print(id);
+  }
+  func main() {
+    go test(1);
+    go test(2);
+  }`,
+  `1
+2`
+)
 
-  func startFrom(x int, myMutex Mutex, myWG WaitGroup) {
-    console.log("STARTFROM")
+test(
+  `package main
+  func f(x int){
+    print(x)
+  }
+  func g() int{
+    return 1
+  }
+  func main() {
+   f(g())
+   }
+  `, 1)
+
+test(
+  `package main
+  var wg sync.WaitGroup
+  
+  func test(id int) {
+    print(id);
+    wg.Done();
+  }
+  func main() {
+    wg.Add(2);
+    go test(1);
+    go test(2);
+    wg.Wait();
+    print("All routines completed");
+  }
+  `,
+  `1
+2
+"All routines completed"`
+)
+
+test(
+  `package main
+  var mutex sync.Mutex
+  var wg sync.WaitGroup
+  var count = 0
+  
+  
+  func increment() {
+   mutex.Lock()
+   count = count + 1
+   mutex.Unlock()
+   wg.Done()
+  }
+  
+  func main() {
+   wg.Add(2)
+   go increment()
+   go increment()
+   wg.Wait()
+   mutex.Lock()
+   print("Count:", count)
+   mutex.Unlock()
+  }`,
+  `"Count:" 2`
+)
+
+
+test(
+  `package main
+  func main() {
+    if (true) {
+      print("This is true");
+    } else {
+      print("This is false");
+    }
+  }`,
+  `"This is true"`
+)
+
+
+test(
+  `package main
+  func main() {
+   i := 0
+   for i < 3{
+     i = i+1
+     print(i);
+   }
+  }`,
+  `1
+2
+3`
+)
+
+
+test(
+  `package main
+  func sender(ch chan<-int) {
+     ch <- 3
+     print("test")
+  }
+  
+  func receiver(ch <-chan int) int{
+     x := <-ch
+     return x
+  }
+  
+  func main() {
+   c := make(chan int)
+   go sender(c)
+   var z = receiver(c)
+   print(z)
+  
+  }`,
+  `"test" 
+3`
+)
+
+
+test(
+  `package main
+  var wg sync.WaitGroup
+  func helper(c chan<-int){
+   go helper2(c)
+   c <- 3
+   wg.Done()
+  }
+  func helper2(c <-chan int){
+   x := <-c
+   print("X IS ",x)
+   if x < 5 {
+     print("1")
+   }
+  }
+  func main(){
+   wg.Add(1)
+   c := make(chan int)
+   go helper(c)
+   wg.Wait()
+   print("2")
+  }`,
+  `"2"
+"X IS " 3
+"1"`
+)
+
+test(
+  `package main
+   var myWG sync.WaitGroup
+
+  func startFrom(x int, myMutex Mutex) {
     y:= 0
-    for (y < 10){
+    for (y < 5){
       print(x + y)
       y = y + 1
       if (x + y == 22 || x + y == 32){
@@ -770,65 +923,52 @@ test(
 
   }
 
+  func receiveAndPrint(ch <-chan int) {
+    x := <-ch
+    print("received value: ",x)
+  }
+
   func main() {
     var myMutex sync.Mutex
-    var myWG sync.WaitGroup
     var x = 0
+    ch := make(chan int)
+    go receiveAndPrint(ch)
 
-    go startFrom(x, myMutex, myWG)
-    go startFrom(10, myMutex, myWG)
-    go startFrom(20, myMutex, myWG)
-    go startFrom(30, myMutex, myWG)
-    myWG.Add(2)
+    go startFrom(x, myMutex)
+    go startFrom(10, myMutex)
+    go startFrom(20, myMutex)
+    go startFrom(30, myMutex)
+    myWG.Add(4)
     print("near beginning")
     myWG.Wait()
-    print("after two finished")
+    print("after four finished")
+    ch <- 777
   }`,
-  "complicated"
+  `0
+"near beginning"
+10
+20
+30
+1
+11
+21
+31
+2
+12
+22
+3
+13
+23
+4
+14
+24
+32
+33
+34
+"after four finished"
+"received value: " 777`
 )
 
-// test(
-//   `package main
-
-//   var myMutex sync.Mutex
-//   var myWG sync.WaitGroup
-
-//   func startFrom(x int) int {
-//     y:= 0
-//     for (y < 10){
-//       print(x + y)
-//       y = y + 1
-//       if (x + y == 22 || x + y == 32){
-//         myMutex.Lock()
-//       }
-//     }
-//     myMutex.Unlock()
-//     myWG.Done()
-
-//   }
-
-//   func receiveAndPrint(ch <-chan int) {
-//     x := <-ch
-//     print("received value: ",x)
-//   }
-
-//   func main() {
-//     var x = 0
-//     ch := make(chan int)
-//     go receiveAndPrint(ch)
-
-//     go startFrom(x)
-//     go startFrom(10)
-//     go startFrom(20)
-//     go startFrom(30)
-//     myWG.Add(2)
-//     print("near beginning")
-//     myWG.Wait()
-//     print("after two finished")
-//     ch <- 7
-//   }`,
-//   "complicated"
-// )
 
 
 
