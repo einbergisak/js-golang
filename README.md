@@ -5,9 +5,9 @@
 
 (To install ANTLR4, it is necessary to install an older version of node as seen below, before doing so, installing nvm is necessary https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
 
--nvm install 12.22.7 (Note: any version in the 12v to 14v range should work. We also tested v14.16.1 which worked)
+-nvm install 14.16.1 (Note: any version in the 12v to 14v range should work. We also tested v14.16.1 which worked)
 
--nvm use 12 (To use installed version)
+-nvm use 14 (To use installed version)
 
 -npm install
 
