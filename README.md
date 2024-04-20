@@ -3,8 +3,9 @@
 
 -Checkout to branch “master”
 
--To install ANTLR4, it is necessary to install an older version of node, before doing so, installing nvm is necessary
-nvm install 12.22.7 (Note: any version in the 12v to 14v range should work. We also tested v14.16.1 which worked)
+(To install ANTLR4, it is necessary to install an older version of node as seen below, before doing so, installing nvm is necessary https://github.com/nvm-sh/nvm?tab=readme-ov-file#installing-and-updating)
+
+-nvm install 12.22.7 (Note: any version in the 12v to 14v range should work. We also tested v14.16.1 which worked)
 
 -nvm user 12 (To use installed version)
 
